@@ -5,14 +5,15 @@ on:
     branches:
       - main
 
+concurrency:
+  group: deploy-lms-frontend
+  cancel-in-progress: false
+
 jobs:
   deploy:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
       - name: Deploy to VPS via SSH
         uses: appleboy/ssh-action@v1.0.3
         with:
@@ -20,18 +21,34 @@ jobs:
           username: ${{ secrets.SSH_USER }}
           key: ${{ secrets.SSH_KEY }}
           port: 22
+          timeout: 60s
+          command_timeout: 30m
           script: |
             set -e
-            sudo mkdir -p /var/www/lms/frontend
-            cd /var/www/lms/frontend
+            export PATH=$PATH:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin:/snap/bin
 
-            if [ ! -d ".git" ]; then
-              sudo git clone https://github.com/Sultonkulov99/ustoz_lms_frontend.git .
+            # Docker mavjudligini tekshirish
+            if ! command -v docker &> /dev/null; then
+              echo "📦 Docker topilmadi, o'rnatilmoqda..."
+              curl -fsSL https://get.docker.com | sudo sh
+              sudo systemctl enable --now docker
+              sudo usermod -aG docker $USER || true
+            fi
+            sudo chmod 666 /var/run/docker.sock || true
+
+            APP_DIR=/var/www/lms/frontend
+            sudo mkdir -p $APP_DIR
+            sudo chown -R $USER:$USER $APP_DIR
+            git config --global --add safe.directory $APP_DIR || true
+
+            cd $APP_DIR
+            REPO=https://github.com/Sultonkulov99/ustoz_lms_frontend.git
+            if [ ! -d .git ]; then
+              git clone $REPO .
             else
-              git remote set-url origin https://github.com/Sultonkulov99/ustoz_lms_frontend.git
-              git reset --hard
-              git clean -fd
-              sudo git pull origin main
+              git remote set-url origin $REPO
+              git fetch origin main
+              git reset --hard origin/main
             fi
 
             docker compose down --remove-orphans || true
@@ -40,4 +57,5 @@ jobs:
             docker image prune -f
 
             echo "✅ Frontend deploy finished!"
+            docker compose ps
             docker compose logs --tail=30 frontend
