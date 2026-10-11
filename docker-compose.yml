@@ -2,12 +2,12 @@ services:
   frontend:
     build: .
     container_name: lms_frontend
-    restart: always
-    ports:
+    restart: always 
+    ports: 
       - "3001:3001"
     environment:
       PORT: 3001
-      BACKEND_URL: "http://151.243.217.77:3000"
+      BACKEND_URL: "http://35.159.109.22:3000"
     env_file:
       - path: .env.local
-        required: false
+        required: false  

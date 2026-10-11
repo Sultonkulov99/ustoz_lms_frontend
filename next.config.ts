@@ -1,8 +1,8 @@
 import type { NextConfig } from "next";
 
-const BACKEND_URL = "https://api.researchbridge.uz/api";
-const BACKEND_ORIGIN = "https://api.researchbridge.uz"; // /files uchun
-const COURSE_BANNERS_BACKEND_URL = "https://api.researchbridge.uz";
+const BACKEND_URL = "http://35.159.109.22:3000/api";
+const BACKEND_ORIGIN = "http://35.159.109.22:3000"; // /files uchun
+const COURSE_BANNERS_BACKEND_URL = "http://35.159.109.22:3000";
 
 const nextConfig: NextConfig = {
   output: "standalone",
