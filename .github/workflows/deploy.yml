@@ -1,0 +1,43 @@
+name: Deploy LMS Frontend
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Deploy to VPS via SSH
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_KEY }}
+          port: 22
+          script: |
+            set -e
+            mkdir -p /var/www/lms/frontend
+            cd /var/www/lms/frontend
+
+            if [ ! -d ".git" ]; then
+              git clone https://x-access-token:${{ secrets.GH_TOKEN }}@github.com/Sultonkulov99/LMS-frontend.git .
+            else
+              git remote set-url origin https://x-access-token:${{ secrets.GH_TOKEN }}@github.com/Sultonkulov99/LMS-frontend.git
+              git reset --hard
+              git clean -fd
+              git pull origin main
+            fi
+
+            docker compose down --remove-orphans || true
+            docker compose build --no-cache
+            docker compose up -d
+            docker image prune -f
+
+            echo "✅ Frontend deploy finished!"
+            docker compose logs --tail=30 frontend

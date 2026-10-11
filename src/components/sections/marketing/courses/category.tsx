@@ -1,0 +1,1 @@
+export { CoursesHero } from "./courses-hero";
